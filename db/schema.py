@@ -28,3 +28,26 @@ def init_db():
 
     conn.commit()
     conn.close()
+
+    migrate_event_detected()
+
+
+def migrate_event_detected():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("PRAGMA table_info(event_detected);")
+    columns = {row[1] for row in cursor.fetchall()}
+
+    if "next_retry_at" not in columns:
+        cursor.execute(
+            "ALTER TABLE event_detected ADD COLUMN next_retry_at TEXT;"
+        )
+
+    if "event_note" not in columns:
+        cursor.execute(
+            "ALTER TABLE event_detected ADD COLUMN event_note TEXT;"
+        )
+
+    conn.commit()
+    conn.close()

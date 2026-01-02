@@ -1,106 +1,58 @@
-# Failure-Aware System (v0.1)
+# Failure-Aware System  
+**v0.2.0 — Operable, Observable, Honest**
 
-A minimal Python system that demonstrates how to **persist user intent safely in the presence of failures**, while allowing domain logic and external integrations to fail, retry, and recover independently.
+A minimal failure-aware system built in Python that treats failures as first-class data instead of edge cases.
 
-This project is intentionally small in scope and strict in guarantees. It focuses on **correctness, durability, and observability**, not scale or UI.
-
----
-
-## 📌 Problem Statement
-
-In many applications, user actions are tightly coupled with downstream processing:
-
-- If domain logic fails, the action is lost
-- If external sync fails, state becomes inconsistent
-- Retries are ad-hoc or invisible
-- Failures are silent or destructive
-
-This project explores a different approach:
-
-> **Persist user intent first.  
-> Everything else is allowed to fail.**
+This project focuses on recording, retrying, and explaining failures in a deterministic and inspectable way.
 
 ---
 
-## 🎯 Core Idea
+## 📌 What This System Is
 
-The system is built around an **append-only event log** that records every user intent before any other processing occurs.
+This system captures events, attempts to synchronize them with an external system, and records everything that happens along the way:
+- when an event was detected  
+- whether synchronization succeeded or failed  
+- how many retries were attempted  
+- when the next retry is allowed  
+- when an event is permanently dead  
+- why an operator believes the failure occurred  
 
-From that single source of truth:
-- Domain state is *derived*
-- External synchronization is *attempted*
-- Failures are *tracked, not hidden*
-- Retries are *bounded and observable*
-
-Nothing deletes or overwrites history.
+Failures are not exceptions. They are data.
 
 ---
 
-## 🧱 System Guarantees (v0.1)
+## 🧠 Design Philosophy
 
-- Durable intent recording  
-- Failure isolation  
-- Idempotent domain projection  
-- Bounded retries  
+This project intentionally avoids:
+- silent retries  
+- infinite retry loops  
+- auto-healing magic  
+
+Instead, it guarantees:
+- explicit failure states  
+- time-aware retries  
+- human-readable diagnostics  
+
+---
+
+## ✨ Core Capabilities (v0.2)
+
+- Event detection & persistence  
 - Explicit failure states  
-- Read-only observability  
+- Retry backoff with scheduling  
+- Dead-letter handling  
+- Human annotations  
+- Read-only CLI diagnostics  
 
 ---
 
-## 🗂 Architecture Overview
+## 🔖 Versioning
 
-### Event Log (Source of Truth)
-Append-only `event_detected` table that is never deleted or destructively modified.
-
-### Domain Projection
-Derived state that may fail safely and be retried without side effects.
-
-### External Sync
-Unreliable by design, with retries driven by the event log.
+v0.1.0: Core failure-aware pipeline  
+v0.2.0: Backoff, health diagnostics, annotations  
 
 ---
 
-## 🛠 Tech Stack
+## 🧠 Final Note
 
-- Python 3.10+
-- SQLite
-- argparse-based CLI
-
----
-
-## ▶️ Running
-
-```bash
-python app.py
-```
-
-## 🔍 Inspecting State
-
-```bash
-python cli.py --status
-python cli.py --recent 5
-```
-
----
-
-## 🚫 Non-Goals
-
-- UI dashboards
-- Authentication
-- Distributed systems
-- Auto cleanup
-
----
-
-## 🔖 Version
-
-**v0.1.0** – Failure-aware core frozen.
-
----
-
-## 🧠 What This Demonstrates
-
-- Failure-aware design
-- Intent-first persistence
-- Safe retries
-- System observability
+This system is built for clarity, not convenience.

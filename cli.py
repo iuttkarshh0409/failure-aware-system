@@ -1,3 +1,6 @@
+from db.schema import init_db
+from db.repositories.event_repo import fetch_health_snapshot
+from db.repositories.event_repo import add_event_note
 import argparse
 from db.repositories.event_repo import (
     fetch_event_counts,
@@ -24,7 +27,8 @@ def show_recent(limit):
         return
 
     for e in events:
-        event_id, event_type, status, retries, ts = e
+        event_id, event_type, status, retries, ts, note = e
+
         print(
             f"#{event_id:<3} | "
             f"{event_type:<15} | "
@@ -33,7 +37,36 @@ def show_recent(limit):
             f"{ts}"
         )
 
+        if note:
+            print(f"        note: {note}")
+
+
+def show_health():
+    snapshot = fetch_health_snapshot()
+
+    print("\nSystem Health")
+    print("-" * 20)
+
+    print(f"Total events : {snapshot['total']}")
+    print(f"Pending      : {snapshot['pending']}")
+    print(f"Failed       : {snapshot['failed']}")
+    print(f"Dead         : {snapshot['dead']}")
+    print(f"Synced       : {snapshot['synced']}")
+
+    if snapshot["oldest_unresolved"]:
+        eid, ts = snapshot["oldest_unresolved"]
+        print(f"\nOldest unresolved event : #{eid} @ {ts}")
+    else:
+        print("\nOldest unresolved event : none")
+
+    if snapshot["most_retried"]:
+        eid, retries = snapshot["most_retried"]
+        print(f"Most retries            : #{eid} ({retries} retries)")
+    else:
+        print("Most retries            : none")
+
 def main():
+    init_db
     parser = argparse.ArgumentParser(
         description="Failure-Aware System CLI (read-only)"
     )
@@ -51,7 +84,25 @@ def main():
         help="Show last N events"
     )
 
+    parser.add_argument(
+    "--health",
+    action="store_true",
+    help="Show system health diagnostics"
+)
+
+    parser.add_argument(
+    "--annotate",
+    nargs=2,
+    metavar=("EVENT_ID", "NOTE"),
+    help="Attach a human-readable note to an event"
+    )
+
+
     args = parser.parse_args()
+
+    if args.health:
+        show_health()
+
 
     if args.status:
         show_status()
@@ -59,8 +110,16 @@ def main():
     if args.recent:
         show_recent(args.recent)
 
-    if not args.status and not args.recent:
-        parser.print_help()
+    if not (args.status or args.recent or args.health or args.annotate):
+       parser.print_help()
+
+
+    if args.annotate:
+       event_id = int(args.annotate[0])
+       note = args.annotate[1]
+       add_event_note(event_id, note)
+       print(f"Note added to event #{event_id}")
+
 
 if __name__ == "__main__":
     main()
