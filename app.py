@@ -4,6 +4,15 @@ from db.repositories.event_repo import fetch_latest_event
 from services.domain_service import apply_event_to_domain
 from services.retry_service import retry_pending_events
 
+from services.correlation_service import detect_failure_clusters
+
+count = detect_failure_clusters()
+print(f"{count} failure clusters detected")
+
+from services.correlation_service import detect_failure_clusters
+detect_failure_clusters()
+
+
 init_db()
 
 if __name__ == "__main__":

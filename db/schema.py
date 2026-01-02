@@ -30,6 +30,7 @@ def init_db():
     conn.close()
 
     migrate_event_detected()
+    init_correlation_schema()
 
 
 def migrate_event_detected():
@@ -51,3 +52,22 @@ def migrate_event_detected():
 
     conn.commit()
     conn.close()
+
+def init_correlation_schema():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS failure_cluster (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_type TEXT NOT NULL,
+        window_start TEXT NOT NULL,
+        window_end TEXT NOT NULL,
+        event_count INTEGER NOT NULL,
+        created_at TEXT NOT NULL
+    );
+    """)
+
+    conn.commit()
+    conn.close()
+

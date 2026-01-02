@@ -175,3 +175,24 @@ def fetch_event_note(event_id):
     row = cursor.fetchone()
     conn.close()
     return row[0] if row else None
+
+def fetch_failure_clusters(limit=10):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT
+            event_type,
+            window_start,
+            window_end,
+            event_count,
+            created_at
+        FROM failure_cluster
+        ORDER BY created_at DESC
+        LIMIT ?
+    """, (limit,))
+
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+

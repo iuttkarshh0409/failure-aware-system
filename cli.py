@@ -1,6 +1,7 @@
 from db.schema import init_db
 from db.repositories.event_repo import fetch_health_snapshot
 from db.repositories.event_repo import add_event_note
+from db.repositories.event_repo import fetch_failure_clusters
 import argparse
 from db.repositories.event_repo import (
     fetch_event_counts,
@@ -65,6 +66,25 @@ def show_health():
     else:
         print("Most retries            : none")
 
+def show_clusters():
+    clusters = fetch_failure_clusters()
+
+    print("\nFailure Clusters")
+    print("-" * 20)
+
+    if not clusters:
+        print("No failure clusters detected.")
+        return
+
+    for c in clusters:
+        event_type, start, end, count, created_at = c
+
+        print(f"{event_type}")
+        print(f"  events : {count}")
+        print(f"  window : {start} → {end}")
+        print()
+
+
 def main():
     init_db
     parser = argparse.ArgumentParser(
@@ -97,6 +117,13 @@ def main():
     help="Attach a human-readable note to an event"
     )
 
+    parser.add_argument(
+    "--clusters",
+    action="store_true",
+    help="Show detected failure clusters"
+)
+
+
 
     args = parser.parse_args()
 
@@ -110,8 +137,9 @@ def main():
     if args.recent:
         show_recent(args.recent)
 
-    if not (args.status or args.recent or args.health or args.annotate):
+    if not (args.status or args.recent or args.health or args.annotate or args.clusters):
        parser.print_help()
+
 
 
     if args.annotate:
@@ -119,6 +147,10 @@ def main():
        note = args.annotate[1]
        add_event_note(event_id, note)
        print(f"Note added to event #{event_id}")
+
+    if args.clusters:
+       show_clusters()
+
 
 
 if __name__ == "__main__":
