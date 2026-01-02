@@ -1,58 +1,114 @@
 # Failure-Aware System  
-**v0.2.0 — Operable, Observable, Honest**
+**v0.3.0 — Failure Correlation & Pattern Detection**
 
-A minimal failure-aware system built in Python that treats failures as first-class data instead of edge cases.
+A minimal failure-aware system built in Python that treats failures as first-class data and analyzes them for recurring patterns.
 
-This project focuses on recording, retrying, and explaining failures in a deterministic and inspectable way.
-
----
-
-## 📌 What This System Is
-
-This system captures events, attempts to synchronize them with an external system, and records everything that happens along the way:
-- when an event was detected  
-- whether synchronization succeeded or failed  
-- how many retries were attempted  
-- when the next retry is allowed  
-- when an event is permanently dead  
-- why an operator believes the failure occurred  
-
-Failures are not exceptions. They are data.
+This release extends the system from observing individual failures to detecting systemic behavior.
 
 ---
 
-## 🧠 Design Philosophy
+## 📌 What v0.3 Adds
 
-This project intentionally avoids:
-- silent retries  
-- infinite retry loops  
-- auto-healing magic  
+v0.3 introduces failure correlation: the ability to detect when failures are not isolated incidents, but part of a broader pattern.
 
-Instead, it guarantees:
-- explicit failure states  
-- time-aware retries  
-- human-readable diagnostics  
+The system now answers a new question:
+
+Is this failure happening alone, or is it happening repeatedly?
 
 ---
 
-## ✨ Core Capabilities (v0.2)
+## 🧠 Design Principles (Unchanged)
 
-- Event detection & persistence  
+The system continues to enforce strict guarantees:
+
+- Failures are explicit states, not exceptions  
+- No silent retries or background magic  
+- No auto-healing or hidden behavior  
+- Read-only observability by default  
+- Human reasoning is additive, not invasive  
+
+Correlation logic does not modify core event history.
+
+---
+
+## ✨ Core Capabilities (v0.3)
+
+### 1️⃣ Failure Clustering
+- Groups FAILED events by event_type
+- Detects bursts within a fixed time window
+- Uses deterministic, rule-based logic
+- No probabilistic or ML-based inference
+
+Clusters represent patterns, not causes.
+
+---
+
+### 2️⃣ Derived & Recomputable Data
+- Failure clusters are stored in a separate table
+- Cluster data is non-authoritative
+- Clusters can be safely deleted and rebuilt
+- Core failure records remain untouched
+
+---
+
+### 3️⃣ Correlation Service
+- Explicit, manually-invoked detection
+- No background schedulers
+- No hidden recomputation
+- Predictable and inspectable behavior
+
+---
+
+### 4️⃣ CLI Pattern Inspection
+
+```bash
+python cli.py --clusters
+```
+
+Shows detected failure patterns without mutating system state.
+
+---
+
+## 🗄 Data Model (Conceptual)
+
+event_detected  
+- Immutable event history  
+- Failure states, retry counts, annotations  
+
+failure_cluster  
+- Derived summaries  
+- Event type  
+- Time window  
+- Number of correlated failures  
+
+---
+
+## 🔖 Version History
+
+v0.1.0  
+- Event persistence  
 - Explicit failure states  
-- Retry backoff with scheduling  
-- Dead-letter handling  
-- Human annotations  
-- Read-only CLI diagnostics  
+
+v0.2.0  
+- Time-aware retry backoff  
+- Health diagnostics  
+- Operator annotations  
+
+v0.3.0  
+- Failure correlation  
+- Pattern detection  
+- CLI visibility  
 
 ---
 
-## 🔖 Versioning
+## 🧠 Why This Matters
 
-v0.1.0: Core failure-aware pipeline  
-v0.2.0: Backoff, health diagnostics, annotations  
+Most systems only answer: Did this fail?
+
+This system now also answers: Is this failing repeatedly?
 
 ---
 
-## 🧠 Final Note
+## 🧊 Status
 
-This system is built for clarity, not convenience.
+v0.3.0 is frozen.
