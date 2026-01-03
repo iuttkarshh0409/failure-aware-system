@@ -15,6 +15,11 @@ detect_failure_clusters()
 
 init_db()
 
+from services.severity_service import recompute_severity
+recompute_severity()
+
+
+
 if __name__ == "__main__":
     detect_event(
         event_type="EVENT_DETECTED",

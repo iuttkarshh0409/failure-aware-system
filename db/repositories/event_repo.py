@@ -196,3 +196,31 @@ def fetch_failure_clusters(limit=10):
     conn.close()
     return rows
 
+def fetch_failed_events(): #added on my own
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id, retry_count
+        FROM event_detected
+        WHERE sync_status = 'FAILED'
+    """)
+
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+def fetch_dead_events(): #added on my own
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id
+        FROM event_detected
+        WHERE sync_status = 'DEAD'
+    """)
+
+    rows = cursor.fetchall()
+    conn.close()
+    return [row[0] for row in rows]
+
