@@ -1,114 +1,212 @@
-# Failure-Aware System  
-**v0.3.0 — Failure Correlation & Pattern Detection**
+# Failure-Aware System — Final (v0.4)
 
-A minimal failure-aware system built in Python that treats failures as first-class data and analyzes them for recurring patterns.
+A deliberately engineered backend system that treats **failure as first-class data** rather than an exception to be hidden or auto-remediated.
 
-This release extends the system from observing individual failures to detecting systemic behavior.
-
----
-
-## 📌 What v0.3 Adds
-
-v0.3 introduces failure correlation: the ability to detect when failures are not isolated incidents, but part of a broader pattern.
-
-The system now answers a new question:
-
-Is this failure happening alone, or is it happening repeatedly?
+This project explores how modern systems can *observe, reason about, and prioritize failures* without sacrificing correctness, explainability, or historical integrity.
 
 ---
 
-## 🧠 Design Principles (Unchanged)
+## 🎯 Project Goal
 
-The system continues to enforce strict guarantees:
+Most systems either:
+- retry blindly, or
+- escalate prematurely via alerts.
 
-- Failures are explicit states, not exceptions  
-- No silent retries or background magic  
-- No auto-healing or hidden behavior  
-- Read-only observability by default  
-- Human reasoning is additive, not invasive  
+This project takes a third path:
 
-Correlation logic does not modify core event history.
+> **Failures are immutable facts. Severity is derived. Decisions remain human.**
 
----
-
-## ✨ Core Capabilities (v0.3)
-
-### 1️⃣ Failure Clustering
-- Groups FAILED events by event_type
-- Detects bursts within a fixed time window
-- Uses deterministic, rule-based logic
-- No probabilistic or ML-based inference
-
-Clusters represent patterns, not causes.
+The system records failures, retries responsibly, identifies patterns, and surfaces *evidence-based severity* — without alerts, dashboards, or automation loops.
 
 ---
 
-### 2️⃣ Derived & Recomputable Data
-- Failure clusters are stored in a separate table
-- Cluster data is non-authoritative
-- Clusters can be safely deleted and rebuilt
-- Core failure records remain untouched
+## 🧱 Core Design Principles
+
+- **Event immutability** — failures are never overwritten
+- **Derived intelligence** — severity and clusters are computed, not stored as truth
+- **Explainability over automation**
+- **Retry awareness without panic**
+- **Read-only observability via CLI**
 
 ---
 
-### 3️⃣ Correlation Service
-- Explicit, manually-invoked detection
-- No background schedulers
-- No hidden recomputation
-- Predictable and inspectable behavior
+## 🧩 System Architecture
 
----
-
-### 4️⃣ CLI Pattern Inspection
-
-```bash
-python cli.py --clusters
+```
+failure-aware-system/
+│
+├── app.py                     # System execution entrypoint
+├── cli.py                     # Read-only observability CLI
+├── requirements.txt
+├── README.md
+│
+├── db/
+│   ├── failure_aware.db       # SQLite event store
+│   ├── connection.py
+│   ├── schema.py              # All schema & migrations
+│   └── repositories/
+│       ├── event_repo.py      # Event-level queries
+│       ├── cluster_repo.py    # Failure clustering logic
+│       └── severity_repo.py   # Severity snapshot queries
+│
+├── services/
+│   ├── event_service.py       # Event ingestion
+│   ├── retry_service.py       # Retry & backoff logic
+│   ├── sync_service.py        # Domain projection
+│   └── severity_service.py   # Severity derivation engine
+│
+├── models/
+│   └── event.py
+│
+├── utils/
+│   ├── json_utils.py
+│   └── time.py
+│
+└── tests/
+    ├── test_event_persistence.py
+    ├── test_retry_logic.py
+    └── test_failure_modes.py
 ```
 
-Shows detected failure patterns without mutating system state.
+---
+
+## 🗂️ Data Model Overview
+
+### `event_detected`
+Immutable log of detected events and failures.
+
+Key fields:
+- `event_type`
+- `event_payload` (raw JSON)
+- `sync_status` (PENDING / FAILED / DEAD / SYNCED)
+- `retry_count`
+- `last_error`
+
+### `failure_severity` (Derived)
+A disposable snapshot describing **how serious failures are right now**.
+
+Fields:
+- `entity_type` (event / cluster)
+- `entity_id`
+- `severity` (LOW / MEDIUM / HIGH / CRITICAL)
+- `reason`
+- `computed_at`
+
+This table can be wiped and recomputed at any time.
 
 ---
 
-## 🗄 Data Model (Conceptual)
+## 🚦 Severity Model (v0.4)
 
-event_detected  
-- Immutable event history  
-- Failure states, retry counts, annotations  
+Severity is **deterministic and explainable**.
 
-failure_cluster  
-- Derived summaries  
-- Event type  
-- Time window  
-- Number of correlated failures  
+### Event-level rules
+- FAILED + retries remaining → **LOW**
+- FAILED + repeated retries → **MEDIUM**
+- DEAD → **HIGH**
 
----
+### Cluster-level rules
+- Multiple failures of same type → **HIGH**
+- Recurring clusters → **CRITICAL**
 
-## 🔖 Version History
-
-v0.1.0  
-- Event persistence  
-- Explicit failure states  
-
-v0.2.0  
-- Time-aware retry backoff  
-- Health diagnostics  
-- Operator annotations  
-
-v0.3.0  
-- Failure correlation  
-- Pattern detection  
-- CLI visibility  
+Severity is never manually set.
 
 ---
 
-## 🧠 Why This Matters
+## 🖥️ CLI Observability
 
-Most systems only answer: Did this fail?
+The system exposes **read-only introspection** via CLI.
 
-This system now also answers: Is this failing repeatedly?
+### Health snapshot
+```
+python cli.py --health
+```
+
+Shows:
+- total events
+- pending / failed / dead / synced
+- oldest unresolved failure
+- most retried event
+
+### Severity overview
+```
+python cli.py --severity
+```
+
+Example:
+```
+CRITICAL : 2
+HIGH     : 5
+MEDIUM   : 4
+LOW      : 1
+```
+
+No alerts. No side effects.
 
 ---
 
-## 🧊 Status
+## 🧪 Testing Philosophy
 
-v0.3.0 is frozen.
+Tests focus on:
+- failure persistence
+- retry exhaustion
+- severity derivation correctness
+
+The system is validated by **behavior**, not UI.
+
+---
+
+## 🏁 Version History
+
+### v0.1
+- Event persistence
+- Retry logic
+- Dead-letter handling
+
+### v0.2
+- Retry backoff
+- Health diagnostics
+- CLI observability
+
+### v0.3
+- Failure clustering
+- Pattern detection
+
+### v0.4 (Final)
+- Evidence-based severity model
+- Derived severity snapshot
+- Severity visibility via CLI
+
+---
+
+## 🛑 What This System Deliberately Does NOT Do
+
+- No alerts
+- No dashboards
+- No auto-remediation
+- No orchestration
+- No production claims
+
+This is a **thinking system**, not a reacting one.
+
+---
+
+## 🎓 What This Project Demonstrates
+
+- Event-driven system design
+- Failure-aware architecture
+- Safe retries & dead-letter patterns
+- Derived analytics over mutable state
+- Discipline in stopping at the right time
+
+---
+
+## ✅ Final Note
+
+This project is intentionally **finished at v0.4**.
+
+Further features would reduce clarity rather than increase value.
+
+The system stands as a complete case study in:
+
+> *How to design systems that respect failure instead of hiding it.*
