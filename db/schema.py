@@ -31,6 +31,8 @@ def init_db():
 
     migrate_event_detected()
     init_correlation_schema()
+    init_failure_severity_table()
+
 
 
 def migrate_event_detected():
@@ -70,4 +72,33 @@ def init_correlation_schema():
 
     conn.commit()
     conn.close()
+
+def init_failure_severity_table():
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS failure_severity (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            entity_type TEXT NOT NULL,
+            entity_id INTEGER NOT NULL,
+            severity TEXT NOT NULL,
+            reason TEXT NOT NULL,
+            computed_at TEXT NOT NULL
+        );
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_severity_entity
+        ON failure_severity (entity_type, entity_id);
+    """)
+
+    cursor.execute("""
+        CREATE INDEX IF NOT EXISTS idx_severity_level
+        ON failure_severity (severity);
+    """)
+
+    conn.commit()
+    conn.close()
+
 
