@@ -1,6 +1,7 @@
 from db.schema import init_db
 from db.repositories.event_repo import fetch_health_snapshot
 from db.repositories.event_repo import add_event_note
+from db.repositories.severity_repo import fetch_severity_snapshot
 from db.repositories.event_repo import fetch_failure_clusters
 import argparse
 from db.repositories.event_repo import (
@@ -84,6 +85,19 @@ def show_clusters():
         print(f"  window : {start} → {end}")
         print()
 
+def show_severity():
+    print("\nFailure Severity Overview")
+    print("-" * 30)
+
+    snapshot = fetch_severity_snapshot()
+
+    if not snapshot:
+        print("No severity data available.")
+        return
+
+    for level, count in snapshot:
+        print(f"{level:<10} : {count}")
+
 
 def main():
     init_db
@@ -122,6 +136,12 @@ def main():
     action="store_true",
     help="Show detected failure clusters"
 )
+    
+    parser.add_argument(
+    "--severity",
+    action="store_true",
+    help="Show failure severity distribution"
+    )
 
 
 
@@ -150,6 +170,9 @@ def main():
 
     if args.clusters:
        show_clusters()
+
+    if args.severity:
+       show_severity()
 
 
 
